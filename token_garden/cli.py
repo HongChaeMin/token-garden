@@ -37,11 +37,16 @@ def sync():
 @click.option(
     "--year",
     type=int,
-    default=date.today().year,
-    show_default=True,
-    help="Year to display.",
+    default=None,
+    help="Year to display (default: current year).",
 )
-def view(style: str, year: int):
+@click.option(
+    "--all", "show_all",
+    is_flag=True,
+    default=False,
+    help="Show all years with data.",
+)
+def view(style: str, year: int | None, show_all: bool):
     """Visualize token usage as a garden."""
     from token_garden.db import Database
     from token_garden.views.grid import GridView
@@ -49,16 +54,26 @@ def view(style: str, year: int):
 
     console = Console()
     db = Database(_DEFAULT_DB)
-    records = db.get_usage(year=year)
-    db.close()
 
-    if not records:
-        console.print(
-            f"[yellow]No data for {year}. Run [bold]token-garden sync[/bold] first.[/yellow]"
-        )
-        return
-
-    if style == "grid":
-        GridView(records, year=year).render(console)
+    if show_all:
+        years = db.get_years()
+        if not years:
+            console.print("[yellow]No data. Run [bold]token-garden sync[/bold] first.[/yellow]")
+            db.close()
+            return
     else:
-        GardenView(records, year=year).render(console)
+        years = [year or date.today().year]
+
+    for y in years:
+        records = db.get_usage(year=y)
+        if not records:
+            console.print(
+                f"[yellow]No data for {y}. Run [bold]token-garden sync[/bold] first.[/yellow]"
+            )
+            continue
+        if style == "grid":
+            GridView(records, year=y).render(console)
+        else:
+            GardenView(records, year=y).render(console)
+
+    db.close()

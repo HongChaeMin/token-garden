@@ -66,5 +66,11 @@ class Database:
             results.append(usage)
         return results
 
+    def get_years(self) -> list[int]:
+        cursor = self._conn.execute(
+            "SELECT DISTINCT substr(date, 1, 4) FROM token_usage ORDER BY 1"
+        )
+        return [int(row[0]) for row in cursor.fetchall()]
+
     def close(self) -> None:
         self._conn.close()
