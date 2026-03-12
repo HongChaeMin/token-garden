@@ -1,7 +1,7 @@
 from datetime import date
 
 from token_garden.providers.base import DailyUsage
-from token_garden.views.grid import GridView, _intensity
+from token_garden.views.grid import GridView, _intensity, _compute_thresholds
 
 
 def make_usage(d: date, total: int) -> DailyUsage:
@@ -10,18 +10,21 @@ def make_usage(d: date, total: int) -> DailyUsage:
 
 
 def test_intensity_zero():
-    assert _intensity(0) == 0
+    thresholds = _compute_thresholds([1, 10_000, 50_000, 100_000])
+    assert _intensity(0, thresholds) == 0
 
 
 def test_intensity_levels():
-    assert _intensity(1) == 1
-    assert _intensity(9_999) == 1
-    assert _intensity(10_000) == 2
-    assert _intensity(49_999) == 2
-    assert _intensity(50_000) == 3
-    assert _intensity(99_999) == 3
-    assert _intensity(100_000) == 4
-    assert _intensity(999_999) == 4
+    # Fixed thresholds: [1, 10_000, 50_000, 100_000]
+    thresholds = [1, 10_000, 50_000, 100_000]
+    assert _intensity(1, thresholds) == 1
+    assert _intensity(9_999, thresholds) == 1
+    assert _intensity(10_000, thresholds) == 2
+    assert _intensity(49_999, thresholds) == 2
+    assert _intensity(50_000, thresholds) == 3
+    assert _intensity(99_999, thresholds) == 3
+    assert _intensity(100_000, thresholds) == 4
+    assert _intensity(999_999, thresholds) == 4
 
 
 def test_grid_view_renders_without_error():
