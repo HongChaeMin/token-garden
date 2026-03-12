@@ -16,8 +16,8 @@ _COLORS = [
     "#56d364",  # 5: brightest green
 ]
 
-_BLOCK = "█ "
-_EMPTY = "░ "
+_BLOCK = "█"
+_EMPTY = "░"
 
 
 def _compute_thresholds(values: list[int]) -> list[int]:
@@ -74,14 +74,14 @@ class GridView:
             if current > dec31 and len(weeks[-1]) == 7:
                 break
 
-        # Month labels — 2 chars per week (letter + space) to match grid cell width
+        # Month labels — 1 char per week to match grid cell width
         month_labels = Text("     ")
         for week in weeks:
             first_real = next((d for d in week if d), None)
             if first_real and first_real.day <= 7:
-                month_labels.append(first_real.strftime("%b")[0] + " ")
+                month_labels.append(first_real.strftime("%b")[0])
             else:
-                month_labels.append("  ")
+                month_labels.append(" ")
         console.print(month_labels)
 
         # Day rows (Mon=0 .. Sun=6)
@@ -91,7 +91,7 @@ class GridView:
             for week in weeks:
                 d = week[dow] if dow < len(week) else None
                 if d is None:
-                    row.append("  ")
+                    row.append(" ")
                 else:
                     total = self._daily.get(d, 0)
                     level = _intensity(total, self._thresholds)
