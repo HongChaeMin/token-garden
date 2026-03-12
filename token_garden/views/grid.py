@@ -7,11 +7,41 @@ from rich.text import Text
 
 from token_garden.providers.base import DailyUsage
 
-_ACTIVE_COLOR = "#26a641"
-_EMPTY_COLOR = "#161b22"
+_COLORS = [
+    "#161b22",  # 0: empty
+    "#0e4429",  # 1: darkest green
+    "#006d32",  # 2: dark green
+    "#26a641",  # 3: medium green
+    "#39d353",  # 4: bright green
+    "#56d364",  # 5: brightest green
+]
 
 _BLOCK = "█ "
 _EMPTY = "░ "
+
+
+def _compute_thresholds(values: list[int]) -> list[int]:
+    """Compute 5 intensity thresholds from actual usage data (percentile-based)."""
+    if not values:
+        return [1, 10_000, 50_000, 100_000, 200_000]
+    sorted_vals = sorted(values)
+    n = len(sorted_vals)
+    return [
+        sorted_vals[max(0, int(n * 0.20) - 1)],
+        sorted_vals[max(0, int(n * 0.40) - 1)],
+        sorted_vals[max(0, int(n * 0.60) - 1)],
+        sorted_vals[max(0, int(n * 0.80) - 1)],
+        sorted_vals[-1],
+    ]
+
+
+def _intensity(total: int, thresholds: list[int]) -> int:
+    if total <= 0:
+        return 0
+    for level in range(5, 0, -1):
+        if total >= thresholds[level - 1]:
+            return level
+    return 1
 
 
 class GridView:
@@ -20,6 +50,8 @@ class GridView:
         self._daily: dict[date, int] = {}
         for r in records:
             self._daily[r.date] = self._daily.get(r.date, 0) + r.total_tokens
+        active = [v for v in self._daily.values() if v > 0]
+        self._thresholds = _compute_thresholds(active)
 
     def render(self, console: Console | None = None) -> None:
         if console is None:
@@ -62,18 +94,22 @@ class GridView:
                     row.append("  ")
                 else:
                     total = self._daily.get(d, 0)
-                    if total > 0:
-                        row.append(_BLOCK, style=_ACTIVE_COLOR)
-                    else:
-                        row.append(_EMPTY, style=_EMPTY_COLOR)
+                    level = _intensity(total, self._thresholds)
+                    char = _BLOCK if total > 0 else _EMPTY
+                    row.append(char, style=_COLORS[level])
             console.print(row)
 
         total_year = sum(self._daily.values())
         peak_day = max(self._daily, key=self._daily.get) if self._daily else None
+        t = self._thresholds
 
         legend = Text("\n")
-        legend.append("░  없음  ", style=_EMPTY_COLOR)
-        legend.append("█  사용", style=_ACTIVE_COLOR)
+        legend.append("░  0  ", style=_COLORS[0])
+        legend.append(f"█ 1-{t[0]:,}  ", style=_COLORS[1])
+        legend.append(f"█ -{t[1]:,}  ", style=_COLORS[2])
+        legend.append(f"█ -{t[2]:,}  ", style=_COLORS[3])
+        legend.append(f"█ -{t[3]:,}  ", style=_COLORS[4])
+        legend.append(f"█ {t[3]+1:,}+", style=_COLORS[5])
         console.print(legend)
 
         console.print(
