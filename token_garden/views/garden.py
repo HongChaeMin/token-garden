@@ -16,15 +16,6 @@ _PLANT_THRESHOLDS = [
     (0,       " "),
 ]
 
-_COLORS = [
-    "#161b22",
-    "#0e4429",
-    "#006d32",
-    "#26a641",
-    "#39d353",
-    "#39d353",
-]
-
 
 def _plant_emoji(weekly_total: int) -> str:
     for threshold, emoji in _PLANT_THRESHOLDS:
@@ -65,7 +56,7 @@ class GardenView:
             color = "#39d353" if total >= 200_000 else \
                     "#26a641" if total >= 100_000 else \
                     "#006d32" if total >= 50_000 else \
-                    "#0e4429" if total >= 10_000 else \
+                    "#0e4429" if total >= 1 else \
                     "#161b22"
 
             line = Text(f"w{wk:02d}  {emoji}  ")
