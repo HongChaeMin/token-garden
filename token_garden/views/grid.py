@@ -104,12 +104,12 @@ class GridView:
         t = self._thresholds
 
         legend = Text("\n")
-        legend.append("░  0  ", style=_COLORS[0])
-        legend.append(f"█ 1-{t[0]:,}  ", style=_COLORS[1])
-        legend.append(f"█ -{t[1]:,}  ", style=_COLORS[2])
-        legend.append(f"█ -{t[2]:,}  ", style=_COLORS[3])
-        legend.append(f"█ -{t[3]:,}  ", style=_COLORS[4])
-        legend.append(f"█ {t[3]+1:,}+", style=_COLORS[5])
+        legend.append("░ 🌑 0  ", style=_COLORS[0])
+        legend.append(f"█ 🌱 1-{t[0]:,}  ", style=_COLORS[1])
+        legend.append(f"█ 🌿 -{t[1]:,}  ", style=_COLORS[2])
+        legend.append(f"█ 🌲 -{t[2]:,}  ", style=_COLORS[3])
+        legend.append(f"█ 🌳 -{t[3]:,}  ", style=_COLORS[4])
+        legend.append(f"█ 🌴 {t[3]+1:,}+", style=_COLORS[5])
         console.print(legend)
 
         console.print(
