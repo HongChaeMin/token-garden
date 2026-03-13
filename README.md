@@ -18,7 +18,7 @@ Total 2026: 646,457 tokens  |  Peak: 2026-03-12 (438,662)
 ### Homebrew
 
 ```bash
-brew tap HongChaeMin/cctoken
+brew tap HongChaeMin/tap
 brew install token-garden
 ```
 
