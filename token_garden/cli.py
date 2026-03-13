@@ -6,6 +6,8 @@ from pathlib import Path
 import click
 from rich.console import Console
 
+import token_garden.sync as _sync_module
+
 _DEFAULT_DB = Path.home() / ".token-garden" / "db.sqlite"
 
 
@@ -54,6 +56,7 @@ def view(style: str, year: int | None, show_all: bool):
 
     console = Console()
     db = Database(_DEFAULT_DB)
+    _sync_module.sync(db, console)
 
     if show_all:
         years = db.get_years()

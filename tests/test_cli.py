@@ -18,6 +18,7 @@ def runner():
 def test_view_no_data_shows_hint(runner, tmp_path, monkeypatch):
     db_path = tmp_path / "db.sqlite"
     monkeypatch.setattr("token_garden.cli._DEFAULT_DB", db_path)
+    monkeypatch.setattr("token_garden.sync.sync", lambda db, console, **kw: None)
 
     result = runner.invoke(cli, ["view"])
     assert result.exit_code == 0
