@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import click
@@ -24,7 +24,7 @@ def sync():
 
     console = Console()
     db = Database(_DEFAULT_DB)
-    _sync(db, console)  # log_dir=None → uses default ~/.claude/projects
+    _sync(db, console)
     db.close()
 
 
@@ -40,7 +40,7 @@ def sync():
     "--year",
     type=int,
     default=None,
-    help="Year to display (default: current year).",
+    help="Calendar year to display.",
 )
 @click.option(
     "--all", "show_all",
@@ -49,7 +49,7 @@ def sync():
     help="Show all years with data.",
 )
 def view(style: str, year: int | None, show_all: bool):
-    """Visualize token usage as a garden."""
+    """Visualize token usage as a garden (default: last 365 days)."""
     from token_garden.db import Database
     from token_garden.views.grid import GridView
     from token_garden.views.garden import GardenView
@@ -61,22 +61,36 @@ def view(style: str, year: int | None, show_all: bool):
     if show_all:
         years = db.get_years()
         if not years:
-            console.print("[yellow]No data. Run [bold]token-garden sync[/bold] first.[/yellow]")
+            console.print("[yellow]No data found.[/yellow]")
             db.close()
             return
-    else:
-        years = [year or date.today().year]
-
-    for y in years:
-        records = db.get_usage(year=y)
+        for y in years:
+            records = db.get_usage(year=y)
+            if not records:
+                continue
+            if style == "grid":
+                GridView(records, date(y, 1, 1), date(y, 12, 31)).render(console)
+            else:
+                GardenView(records, year=y).render(console)
+    elif year:
+        records = db.get_usage(year=year)
         if not records:
-            console.print(
-                f"[yellow]No data for {y}. Run [bold]token-garden sync[/bold] first.[/yellow]"
-            )
-            continue
-        if style == "grid":
-            GridView(records, year=y).render(console)
+            console.print(f"[yellow]No data for {year}.[/yellow]")
+        elif style == "grid":
+            GridView(records, date(year, 1, 1), date(year, 12, 31)).render(console)
         else:
-            GardenView(records, year=y).render(console)
+            GardenView(records, year=year).render(console)
+    else:
+        # default: last 365 days
+        end = date.today()
+        start = end - timedelta(days=364)
+        records = db.get_usage_range(start, end)
+        if not records:
+            console.print("[yellow]No data. Run [bold]token-garden sync[/bold] first.[/yellow]")
+        elif style == "grid":
+            GridView(records, start, end).render(console)
+        else:
+            # garden view는 연도 단위라 올해로 fallback
+            GardenView(db.get_usage(year=end.year), year=end.year).render(console)
 
     db.close()

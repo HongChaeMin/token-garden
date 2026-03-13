@@ -45,14 +45,17 @@ class Database:
         self._conn.commit()
 
     def get_usage(self, year: int) -> list[DailyUsage]:
+        return self.get_usage_range(date(year, 1, 1), date(year, 12, 31))
+
+    def get_usage_range(self, start: date, end: date) -> list[DailyUsage]:
         cursor = self._conn.execute(
             """
             SELECT date, provider, input_tokens, output_tokens, total_tokens
             FROM token_usage
-            WHERE date LIKE ?
+            WHERE date BETWEEN ? AND ?
             ORDER BY date
             """,
-            (f"{year}-%",),
+            (start.isoformat(), end.isoformat()),
         )
         results = []
         for row in cursor.fetchall():
@@ -62,7 +65,7 @@ class Database:
                 input_tokens=row[2],
                 output_tokens=row[3],
             )
-            usage.total_tokens = row[4]  # use stored value over recomputed
+            usage.total_tokens = row[4]
             results.append(usage)
         return results
 

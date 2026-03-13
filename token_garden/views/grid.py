@@ -45,8 +45,9 @@ def _intensity(total: int, thresholds: list[int]) -> int:
 
 
 class GridView:
-    def __init__(self, records: list[DailyUsage], year: int):
-        self._year = year
+    def __init__(self, records: list[DailyUsage], start: date, end: date):
+        self._start = start
+        self._end = end
         self._daily: dict[date, int] = {}
         for r in records:
             self._daily[r.date] = self._daily.get(r.date, 0) + r.total_tokens
@@ -57,24 +58,26 @@ class GridView:
         if console is None:
             console = Console()
 
-        console.print(f"\n[bold green]🌿 Token Garden — {self._year}[/bold green]\n")
+        label = (f"{self._start.strftime('%Y.%m.%d')} ~ {self._end.strftime('%Y.%m.%d')}"
+                 if self._start.year != self._end.year or self._start.month != 1 or self._end.month != 12
+                 else str(self._start.year))
+        console.print(f"\n[bold green]🌿 Token Garden — {label}[/bold green]\n")
 
-        jan1 = date(self._year, 1, 1)
-        dec31 = date(self._year, 12, 31)
-        start = jan1 - timedelta(days=jan1.weekday())
+        grid_start = self._start - timedelta(days=self._start.weekday())
 
         weeks: list[list[date | None]] = []
-        current = start
-        while current <= dec31 or len(weeks[-1]) < 7 if weeks else True:
+        current = grid_start
+        while current <= self._end:
             if not weeks or len(weeks[-1]) == 7:
                 weeks.append([])
-            d = current if current.year == self._year else None
+            d = current if self._start <= current <= self._end else None
             weeks[-1].append(d)
             current += timedelta(days=1)
-            if current > dec31 and len(weeks[-1]) == 7:
-                break
+        # pad last week to 7
+        while weeks and len(weeks[-1]) < 7:
+            weeks[-1].append(None)
 
-        # Month labels — 1 char per week to match grid cell width
+        # Month labels — 1 char per week
         month_labels = Text("     ")
         for week in weeks:
             first_real = next((d for d in week if d), None)
@@ -99,7 +102,7 @@ class GridView:
                     row.append(char, style=_COLORS[level])
             console.print(row)
 
-        total_year = sum(self._daily.values())
+        total = sum(self._daily.values())
         peak_day = max(self._daily, key=self._daily.get) if self._daily else None
         t = self._thresholds
 
@@ -113,7 +116,7 @@ class GridView:
         console.print(legend)
 
         console.print(
-            f"Total {self._year}: [green]{total_year:,}[/green] tokens"
+            f"Total: [green]{total:,}[/green] tokens"
             + (f"  |  Peak: [green]{peak_day}[/green] "
                f"({self._daily[peak_day]:,})" if peak_day else "")
         )

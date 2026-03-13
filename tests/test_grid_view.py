@@ -35,7 +35,7 @@ def test_grid_view_renders_without_error():
     ]
     buf = io.StringIO()
     console = Console(file=buf, force_terminal=False)
-    GridView(records, year=2025).render(console)
+    GridView(records, date(2025, 1, 1), date(2025, 12, 31)).render(console)
     output = buf.getvalue()
 
     assert "2025" in output
